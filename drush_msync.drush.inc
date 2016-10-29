@@ -101,14 +101,16 @@ function _drush_msync_process($drush_command, $source, $destination) {
 
   foreach ($common_sources as $site => $current_source) {
     $current_destination = $common_destinations[$site];
-    drush_log(dt('Syncing from @source to @destination', [
+    $t_args = [
       '@source' => $current_source,
       '@destination' => $current_destination
-    ], 'ok'));
+    ];
+    drush_log(dt('Start: Syncing from @source to @destination', $t_args, 'ok'));
     drush_invoke_process('@self', $drush_command, [
       $current_source . $source_suffix,
       $current_destination . $destination_suffix
     ], drush_get_context('cli'));
+    drush_log(dt('DOne: Syncing from @source to @destination', $t_args, 'success'));
   }
 }
 
