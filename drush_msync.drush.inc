@@ -8,13 +8,13 @@ function drush_msync_drush_command() {
 
   // @todo Check if we must include that file.
   $sql_sync_commands = sqlsync_drush_command();
-  $items['drush-msync-sql'] = array(
-    'description' => "Does sql-sync for all sites of a multisite. The sites are matched according to their last component (separated by '.,').",
+  $items['msync-sql'] = array(
+    'description' => "Does sql-sync for all sites of a multisite. The sites are matched according to their last component (separated by '.').",
   ) + $sql_sync_commands['sql-sync'];
 
   $core_commands = core_drush_command();
-  $items['drush-msync-files'] = array(
-    'description' => "Does rsync for all sites of a multisite. The sites are matched according to their last component (separated by '.,').",
+  $items['msync-files'] = array(
+    'description' => "Does rsync for all sites of a multisite. The sites are matched according to their last component (separated by '.').",
   ) + $core_commands['core-rsync'];
 
   return $items;
@@ -131,6 +131,8 @@ function _drush_msync_split_path($source) {
 function _drush_msync_aliases_by_site($site_list) {
   $aliases_by_site = [];
   foreach ($site_list as $site_alias_name) {
+    // Use simple naming scheme to match site.
+    // @todo Consider getting the site name with (much slower) drush status.
     $source_parts = implode('.', $site_alias_name);
     $site_name = $source_parts[count($source_parts) - 1];
     $aliases_by_site[$site_name] = $site_alias_name;
