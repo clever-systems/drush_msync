@@ -82,7 +82,7 @@ function _drush_msync_process($drush_command, $source, $destination) {
   $destinations_by_site = _drush_msync_aliases_by_site($destination_record['site-list']);
 
   $common_sources = array_intersect_key($sources_by_site, $destinations_by_site);
-  $common_destinations = array_intersect_key($sources_by_site, $destinations_by_site);
+  $common_destinations = array_intersect_key($destinations_by_site, $sources_by_site);
   $excess_sources = array_diff_key($sources_by_site, $destinations_by_site);
   $excess_destinations = array_diff_key($destinations_by_site, $sources_by_site);
 
@@ -96,7 +96,7 @@ function _drush_msync_process($drush_command, $source, $destination) {
     drush_log(dt('No common sites found.'), 'warning');
   }
   else {
-    drush_log(dt('Syncing: @sites', ['@sites' => implode(', ', array_keys($excess_sources))]), 'ok');
+    drush_log(dt('Syncing: @sites', ['@sites' => implode(', ', array_keys($common_sources))]), 'ok');
   }
 
   foreach ($common_sources as $site => $current_source) {
@@ -105,7 +105,7 @@ function _drush_msync_process($drush_command, $source, $destination) {
       '@source' => $current_source,
       '@destination' => $current_destination
     ], 'ok'));
-    drush_invoke_process('@none', $drush_command, [
+    drush_invoke_process('@self', $drush_command, [
       $current_source . $source_suffix,
       $current_destination . $destination_suffix
     ], drush_get_context('cli'));
@@ -133,7 +133,7 @@ function _drush_msync_aliases_by_site($site_list) {
   foreach ($site_list as $site_alias_name) {
     // Use simple naming scheme to match site.
     // @todo Consider getting the site name with (much slower) drush status.
-    $source_parts = implode('.', $site_alias_name);
+    $source_parts = explode('.', $site_alias_name);
     $site_name = $source_parts[count($source_parts) - 1];
     $aliases_by_site[$site_name] = $site_alias_name;
   }
