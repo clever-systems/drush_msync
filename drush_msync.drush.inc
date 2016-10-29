@@ -15,7 +15,7 @@ function drush_msync_drush_command() {
   $core_commands = core_drush_command();
   $items['drush-msync-files'] = array(
     'description' => "Does rsync for all sites of a multisite. The sites are matched according to their last component (separated by '.,').",
-  ) + $core_commands['rsync'];
+  ) + $core_commands['core-rsync'];
 
   return $items;
 }
