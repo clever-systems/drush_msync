@@ -1,0 +1,12 @@
+{
+    "name": "clever-systems/drush-msync",
+    "description": "Multisite drush sql-sync and rsync.",
+    "type": "drupal-drush",
+    "authors": [
+        {
+            "name": "Axel Rutz",
+            "email": "axel.rutz@clever-systems.net"
+        }
+    ],
+    "require": {}
+}
