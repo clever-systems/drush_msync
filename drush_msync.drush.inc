@@ -137,12 +137,22 @@ function _drush_msync_split_path($source) {
 function _drush_msync_aliases_by_site($site_list) {
   $aliases_by_site = [];
   foreach ($site_list as $site_alias_name) {
-    // Use simple naming scheme to match site.
-    // @todo Consider getting the site name with (much slower) drush status.
-    $source_parts = explode('.', $site_alias_name);
-    $site_name = $source_parts[count($source_parts) - 1];
+    $site_name = _drush_msync_extract_alias_site($site_alias_name);
     $aliases_by_site[$site_name] = $site_alias_name;
   }
   return $aliases_by_site;
 }
 
+/**
+ * @param $site_alias_name
+ * @return mixed
+ */
+function _drush_msync_extract_alias_site($site_alias_name) {
+  // Use simple naming scheme to match site.
+  // This covers naming schemes like name.site or name:site,
+  // and also drush's /drupal/path#site
+  // @todo Consider option to get the site name with (much slower) drush status.
+  $source_parts = array_reverse(preg_split('/[.:#]/', $site_alias_name));
+  $site_name = $source_parts[0];
+  return $site_name;
+}
