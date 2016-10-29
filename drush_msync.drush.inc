@@ -40,8 +40,12 @@ function drush_drush_msync_msync_files_validate($source, $destination) {
  * @return bool
  */
 function _drush_msync_validate($source, $destination) {
-  $source_record = drush_sitealias_get_record($source);
-  $destination_record = drush_sitealias_get_record($destination);
+  // Rsync path handling, sql-sync alias just has no suffix.
+  list($source_alias, $source_suffix) = _drush_msync_split_path($source);
+  list($destination_alias, $destination_suffix) = _drush_msync_split_path($destination);
+
+  $source_record = drush_sitealias_get_record($source_alias);
+  $destination_record = drush_sitealias_get_record($destination_alias);
 
   if (!isset($source_record['site-list'])) {
     return drush_set_error('DRUSH_drush_sql_msync_ERROR', dt('Source record must be multiple.'));
