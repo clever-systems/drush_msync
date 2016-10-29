@@ -23,14 +23,14 @@ function drush_msync_drush_command() {
 /**
  * Implementation of drush_hook_COMMAND_validate().
  */
-function drush_drush_msync_sql_validate($source, $destination) {
+function drush_drush_msync_msync_sql_validate($source, $destination) {
   return _drush_msync_validate($source, $destination);
 }
 
 /**
  * Implementation of drush_hook_COMMAND_validate().
  */
-function drush_drush_msync_files_validate($source, $destination) {
+function drush_drush_msync_msync_files_validate($source, $destination) {
   return _drush_msync_validate($source, $destination);
 }
 
@@ -55,14 +55,14 @@ function _drush_msync_validate($source, $destination) {
 /**
  * Implementation of drush_hook_COMMAND().
  */
-function drush_drush_msync_sql($source, $destination) {
+function drush_drush_msync_msync_sql($source, $destination) {
   _drush_msync_process('sql-sync', $source, $destination);
 }
 
 /**
  * Implementation of drush_hook_COMMAND().
  */
-function drush_drush_msync_files($source, $destination) {
+function drush_drush_msync_msync_files($source, $destination) {
   _drush_msync_process('rsync', $source, $destination);
 }
 
