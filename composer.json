@@ -1,5 +1,5 @@
 {
-    "name": "clever-systems/drush-msync",
+    "name": "clever-systems/drush_msync",
     "description": "Multisite drush sql-sync and rsync.",
     "type": "drupal-drush",
     "authors": [
