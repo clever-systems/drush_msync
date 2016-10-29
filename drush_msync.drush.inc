@@ -16,7 +16,6 @@ function drush_msync_drush_command() {
   $items['drush-msync-files'] = array(
     'description' => "Does rsync for all sites of a multisite. The sites are matched according to their last component (separated by '.,').",
   ) + $core_commands['rsync'];
-  // @fixme We have to tell the command also the paths.
 
   return $items;
 }
@@ -73,8 +72,12 @@ function drush_drush_msync_files($source, $destination) {
  * @param $destination
  */
 function _drush_msync_process($drush_command, $source, $destination) {
-  $source_record = drush_sitealias_get_record($source);
-  $destination_record = drush_sitealias_get_record($destination);
+  // Rsync path handling, sql-sync alias just has no suffix.
+  list($source_alias, $source_suffix) = _drush_msync_split_path($source);
+  list($destination_alias, $destination_suffix) = _drush_msync_split_path($destination);
+
+  $source_record = drush_sitealias_get_record($source_alias);
+  $destination_record = drush_sitealias_get_record($destination_alias);
   $sources_by_site = _drush_msync_aliases_by_site($source_record['site-list']);
   $destinations_by_site = _drush_msync_aliases_by_site($destination_record['site-list']);
 
@@ -103,10 +106,22 @@ function _drush_msync_process($drush_command, $source, $destination) {
       '@destination' => $current_destination
     ], 'ok'));
     drush_invoke_process('@none', $drush_command, [
-      $current_source,
-      $current_destination
+      $current_source . $source_suffix,
+      $current_destination . $destination_suffix
     ], drush_get_context('cli'));
   }
+}
+
+/**
+ * @param $source
+ * @return array
+ *   Splits 'alias:path' into ['alias',':path']
+ *   and 'alias' into ['alias','']
+ */
+function _drush_msync_split_path($source) {
+  $source_parts = preg_split('/(?=:)/', $source, 2);
+  $source_parts += [1 => ''];
+  return $source_parts;
 }
 
 /**
