@@ -114,7 +114,7 @@ function _drush_msync_process($drush_command, $source, $destination) {
       $current_source . $source_suffix,
       $current_destination . $destination_suffix
     ], drush_get_context('cli'));
-    drush_log(dt('DOne: Syncing from @source to @destination', $t_args, 'success'));
+    drush_log(dt('Done: Syncing from @source to @destination', $t_args, 'success'));
   }
 }
 
