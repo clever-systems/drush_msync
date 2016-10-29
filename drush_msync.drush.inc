@@ -109,12 +109,12 @@ function _drush_msync_process($drush_command, $source, $destination) {
       '@source' => $current_source,
       '@destination' => $current_destination
     ];
-    drush_log(dt('Start: Syncing from @source to @destination', $t_args), 'ok');
+    drush_log(dt('Start: @source => @destination', $t_args), 'ok');
     drush_invoke_process('@self', $drush_command, [
       $current_source . $source_suffix,
       $current_destination . $destination_suffix
     ], drush_get_context('cli'));
-    drush_log(dt('Done: Syncing from @source to @destination', $t_args), 'success');
+    drush_log(dt('Done: @source => @destination', $t_args), 'success');
   }
 }
 
