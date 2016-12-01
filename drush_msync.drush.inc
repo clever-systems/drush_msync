@@ -84,7 +84,36 @@ function _drush_msync_process($drush_command, $source_spec, $destination_spec) {
   // Rsync path handling, sql-sync alias just has no suffix.
   list($source_alias, $source_path_suffix) = _drush_msync_split_path($source_spec);
   list($destination_alias, $destination_path_suffix) = _drush_msync_split_path($destination_spec);
+  list($sources, $destinations) = _drush_msync_prepare_site_list($source_alias, $destination_alias);
 
+  foreach ($sources as $site => $source) {
+    $destination = $destinations[$site];
+    $t_args = [
+      '@source' => $source,
+      '@destination' => $destination
+    ];
+    drush_log(dt('Start: @source => @destination', $t_args), 'ok');
+
+    if ($drush_command == 'sql-sync' && drush_get_option('clean-target', TRUE)) {
+      drush_invoke_process('@self', 'sql-drop', [], drush_get_context('cli'));
+    }
+
+    drush_invoke_process('@self', $drush_command, [
+      $source . $source_path_suffix,
+      $destination . $destination_path_suffix
+    ], drush_get_context('cli'));
+
+    drush_log(dt('Done: @source => @destination', $t_args), 'success');
+    drush_log(dt('+----------------------------------------------+'), 'ok');
+  }
+}
+
+/**
+ * @param $source_alias
+ * @param $destination_alias
+ * @return array
+ */
+function _drush_msync_prepare_site_list($source_alias, $destination_alias) {
   $source_record = drush_sitealias_get_record($source_alias);
   $destination_record = drush_sitealias_get_record($destination_alias);
   $sources_by_site = _drush_msync_aliases_by_site($source_record['site-list']);
@@ -97,7 +126,7 @@ function _drush_msync_process($drush_command, $source_spec, $destination_spec) {
 
   $restrict_sites = drush_get_option_list('only-sites');
   $restrict_sites_as_keys = array_fill_keys($restrict_sites, 1);
-  $restricted_sites_to_display  = array_keys(array_intersect_key($restrict_sites_as_keys, $sources));
+  $restricted_sites_to_display = array_keys(array_intersect_key($restrict_sites_as_keys, $sources));
   $sources = array_intersect_key($sources, $restrict_sites_as_keys);
 
   $excluded_sites = drush_get_option_list('exclude-sites');
@@ -123,27 +152,10 @@ function _drush_msync_process($drush_command, $source_spec, $destination_spec) {
   else {
     drush_log(dt('Syncing: @sites', ['@sites' => implode(', ', array_keys($sources))]), 'ok');
     if (!drush_confirm('OK?')) {
-      return;
+      $sources = $destinations = [];
     }
   }
-
-  foreach ($sources as $site => $source) {
-    $destination = $destinations[$site];
-    $t_args = [
-      '@source' => $source,
-      '@destination' => $destination
-    ];
-    drush_log(dt('Start: @source => @destination', $t_args), 'ok');
-    if ($drush_command == 'sql-sync' && drush_get_option('clean-target', TRUE)) {
-      drush_invoke_process('@self', 'sql-drop', [], drush_get_context('cli'));
-    }
-    drush_invoke_process('@self', $drush_command, [
-      $source . $source_path_suffix,
-      $destination . $destination_path_suffix
-    ], drush_get_context('cli'));
-    drush_log(dt('Done: @source => @destination', $t_args), 'success');
-    drush_log(dt('+----------------------------------------------+'), 'ok');
-  }
+  return array($sources, $destinations);
 }
 
 /**
