@@ -82,8 +82,8 @@ function drush_drush_msync_msync_files($source, $destination) {
  */
 function _drush_msync_process($drush_command, $source, $destination) {
   // Rsync path handling, sql-sync alias just has no suffix.
-  list($source_alias, $source_suffix) = _drush_msync_split_path($source);
-  list($destination_alias, $destination_suffix) = _drush_msync_split_path($destination);
+  list($source_alias, $source_path_suffix) = _drush_msync_split_path($source);
+  list($destination_alias, $destination_path_suffix) = _drush_msync_split_path($destination);
 
   $source_record = drush_sitealias_get_record($source_alias);
   $destination_record = drush_sitealias_get_record($destination_alias);
@@ -138,8 +138,8 @@ function _drush_msync_process($drush_command, $source, $destination) {
       drush_invoke_process('@self', 'sql-drop', [], drush_get_context('cli'));
     }
     drush_invoke_process('@self', $drush_command, [
-      $current_source . $source_suffix,
-      $current_destination . $destination_suffix
+      $current_source . $source_path_suffix,
+      $current_destination . $destination_path_suffix
     ], drush_get_context('cli'));
     drush_log(dt('Done: @source => @destination', $t_args), 'success');
     drush_log(dt('+----------------------------------------------+'), 'ok');
