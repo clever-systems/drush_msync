@@ -11,11 +11,14 @@ function drush_msync_drush_command() {
   $items['msync-sql'] = array(
     'description' => "Does sql-sync for all sites of a multisite. The sites are matched according to their last component (separated by '.').",
   ) + $sql_sync_commands['sql-sync'];
+  $items['msync-sql']['options']['exclude-sites'] = 'A comma-separeted list of sites to exclude.';
+  $items['msync-sql']['options']['clean-target'] = 'If the target DB should be emptied first. Defaults to 1=yes.';
 
   $core_commands = core_drush_command();
   $items['msync-files'] = array(
     'description' => "Does rsync for all sites of a multisite. The sites are matched according to their last component (separated by '.').",
   ) + $core_commands['core-rsync'];
+  $items['msync-files']['options']['exclude-sites'] = 'A comma-separeted list of sites to exclude.';
 
   return $items;
 }
@@ -90,31 +93,46 @@ function _drush_msync_process($drush_command, $source, $destination) {
   $excess_sources = array_diff_key($sources_by_site, $destinations_by_site);
   $excess_destinations = array_diff_key($destinations_by_site, $sources_by_site);
 
+  $excluded_sites = drush_get_option_list('exclude-sites');
+  $excluded_sites_as_keys = array_fill_keys($excluded_sites, 1);
+  $sources_excluded = array_keys(array_intersect_key($excluded_sites_as_keys, $common_sources));
+  $sources_todo = array_intersect_key($common_sources, $excluded_sites_as_keys);
+
   if ($excess_sources) {
     drush_log(dt('Excess sources found: @excess', ['@excess' => implode(', ', $excess_sources)]), 'warning');
   }
   if ($excess_destinations) {
     drush_log(dt('Excess destinations found: @excess', ['@excess' => implode(', ', $excess_destinations)]), 'warning');
   }
+  if ($excess_destinations) {
+    drush_log(dt('Excluded sites: @excluded', ['@excluded' => implode(', ', $sources_excluded)]), 'warning');
+  }
   if (!$common_sources) {
-    drush_log(dt('No common sites found.'), 'warning');
+    drush_log(dt('No sites found to process.'), 'warning');
   }
   else {
     drush_log(dt('Syncing: @sites', ['@sites' => implode(', ', array_keys($common_sources))]), 'ok');
+    if (!drush_confirm('OK?')) {
+      return;
+    }
   }
 
-  foreach ($common_sources as $site => $current_source) {
+  foreach ($sources_todo as $site => $current_source) {
     $current_destination = $common_destinations[$site];
     $t_args = [
       '@source' => $current_source,
       '@destination' => $current_destination
     ];
     drush_log(dt('Start: @source => @destination', $t_args), 'ok');
+    if ($drush_command == 'sql-sync' && drush_get_option('clean-target', TRUE)) {
+      drush_invoke_process('@self', 'sql-drop', [], drush_get_context('cli'));
+    }
     drush_invoke_process('@self', $drush_command, [
       $current_source . $source_suffix,
       $current_destination . $destination_suffix
     ], drush_get_context('cli'));
     drush_log(dt('Done: @source => @destination', $t_args), 'success');
+    drush_log(dt('+----------------------------------------------+'), 'ok');
   }
 }
 
