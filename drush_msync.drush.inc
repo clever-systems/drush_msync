@@ -110,7 +110,7 @@ function _drush_msync_process($drush_command, $source_spec, $destination_spec) {
       drush_invoke_process($destination, 'sql-drop', [], $context);
     }
 
-    drush_invoke_process('@none', $drush_command, [
+    drush_invoke_process('@self', $drush_command, [
       $source . $source_path_suffix,
       $destination . $destination_path_suffix
     ], $context);
