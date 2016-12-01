@@ -11,19 +11,29 @@ function drush_msync_drush_command() {
   $items['msync-sql'] = array(
     'description' => "Does sql-sync for all sites of a multisite. The sites are matched according to their last component (separated by '.').",
   ) + $sql_sync_commands['sql-sync'];
-  $items['msync-sql']['options']['only-sites'] = 'A comma-separeted list of sites to process.';
-  $items['msync-sql']['options']['exclude-sites'] = 'A comma-separeted list of sites to exclude.';
-  // Same option name as in site-install.
-  $items['msync-sql']['options']['db-drop-existing-tables'] = 'If the target DB should be emptied first. Defaults to 1=yes.';
+  $items['msync-sql']['options'] += _drush_msync_extra_options('sql-sync');
 
   $core_commands = core_drush_command();
   $items['msync-files'] = array(
     'description' => "Does rsync for all sites of a multisite. The sites are matched according to their last component (separated by '.').",
   ) + $core_commands['core-rsync'];
-  $items['msync-sql']['options']['only-sites'] = 'A comma-separeted list of sites to process.';
-  $items['msync-files']['options']['exclude-sites'] = 'A comma-separeted list of sites to exclude.';
+  $items['msync-sql']['options'] += _drush_msync_extra_options('rsync');
 
   return $items;
+}
+
+function _drush_msync_extra_options($command) {
+  $options = [
+    'only-sites' => 'A comma-separeted list of sites to process.',
+    'exclude-sites' => 'A comma-separeted list of sites to exclude.',
+  ];
+  if ($command === 'sql-sync') {
+    $options += [
+      // Same option name as in site-install.
+      'db-drop-existing-tables' => 'If the target DB should be emptied first. Defaults to 1=yes.',
+    ];
+  }
+  return $options;
 }
 
 /**
@@ -95,14 +105,15 @@ function _drush_msync_process($drush_command, $source_spec, $destination_spec) {
     ];
     drush_log(dt('Start: @source => @destination', $t_args), 'ok');
 
+    $context = array_diff_key(drush_get_context('cli'), _drush_msync_extra_options($drush_command));
     if ($drush_command == 'sql-sync' && drush_get_option('db-drop-existing-tables', TRUE)) {
-      drush_invoke_process('@self', 'sql-drop', [], drush_get_context('cli'));
+      drush_invoke_process('@self', 'sql-drop', [], $context);
     }
 
     drush_invoke_process('@self', $drush_command, [
       $source . $source_path_suffix,
       $destination . $destination_path_suffix
-    ], drush_get_context('cli'));
+    ], $context);
 
     drush_log(dt('Done: @source => @destination', $t_args), 'success');
     drush_log(dt('+----------------------------------------------+'), 'ok');
