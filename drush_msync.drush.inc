@@ -107,10 +107,10 @@ function _drush_msync_process($drush_command, $source_spec, $destination_spec) {
 
     $context = array_diff_key(drush_get_context('cli'), _drush_msync_extra_options($drush_command));
     if ($drush_command == 'sql-sync' && drush_get_option('db-drop-existing-tables', TRUE)) {
-      drush_invoke_process('@self', 'sql-drop', [], $context);
+      drush_invoke_process($destination . $destination_path_suffix, 'sql-drop', [], $context);
     }
 
-    drush_invoke_process('@self', $drush_command, [
+    drush_invoke_process('@none', $drush_command, [
       $source . $source_path_suffix,
       $destination . $destination_path_suffix
     ], $context);
