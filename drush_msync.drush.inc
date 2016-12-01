@@ -126,14 +126,18 @@ function _drush_msync_prepare_site_list($source_alias, $destination_alias) {
   $excess_destinations = array_diff_key($destinations_by_site, $sources_by_site);
 
   $restrict_sites = drush_get_option_list('only-sites');
-  $restrict_sites_as_keys = array_fill_keys($restrict_sites, 1);
-  $restricted_sites_to_display = array_keys(array_intersect_key($restrict_sites_as_keys, $sources));
-  $sources = array_intersect_key($sources, $restrict_sites_as_keys);
+  if ($restrict_sites) {
+    $restrict_sites_as_keys = array_fill_keys($restrict_sites, 1);
+    $restrict_sites_to_display = array_keys(array_intersect_key($restrict_sites_as_keys, $sources));
+    $sources = array_intersect_key($sources, $restrict_sites_as_keys);
+  }
 
-  $excluded_sites = drush_get_option_list('exclude-sites');
-  $excluded_sites_as_keys = array_fill_keys($excluded_sites, 1);
-  $excluded_sites_to_display = array_keys(array_intersect_key($excluded_sites_as_keys, $sources));
-  $sources = array_diff_key($sources, $excluded_sites_as_keys);
+  $exclude_sites = drush_get_option_list('exclude-sites');
+  if ($exclude_sites) {
+    $exclude_sites_as_keys = array_fill_keys($exclude_sites, 1);
+    $exclude_sites_to_display = array_keys(array_intersect_key($exclude_sites_as_keys, $sources));
+    $sources = array_diff_key($sources, $exclude_sites_as_keys);
+  }
 
   if ($excess_sources) {
     drush_log(dt('Excess sources found: @excess', ['@excess' => implode(', ', $excess_sources)]), 'warning');
@@ -141,11 +145,11 @@ function _drush_msync_prepare_site_list($source_alias, $destination_alias) {
   if ($excess_destinations) {
     drush_log(dt('Excess destinations found: @excess', ['@excess' => implode(', ', $excess_destinations)]), 'warning');
   }
-  if ($restricted_sites_to_display) {
-    drush_log(dt('Restricted to sites: @restricted', ['@restricted' => implode(', ', $restricted_sites_to_display)]), 'warning');
+  if (!empty($restrict_sites_to_display)) {
+    drush_log(dt('Restricted to sites: @restricted', ['@restricted' => implode(', ', $restrict_sites_to_display)]), 'warning');
   }
-  if ($excluded_sites_to_display) {
-    drush_log(dt('Excluded sites: @excluded', ['@excluded' => implode(', ', $excluded_sites_to_display)]), 'warning');
+  if (!empty($exclude_sites_to_display)) {
+    drush_log(dt('Excluded sites: @excluded', ['@excluded' => implode(', ', $exclude_sites_to_display)]), 'warning');
   }
   if (!$sources) {
     drush_log(dt('No sites found to process.'), 'warning');
