@@ -13,7 +13,8 @@ function drush_msync_drush_command() {
   ) + $sql_sync_commands['sql-sync'];
   $items['msync-sql']['options']['only-sites'] = 'A comma-separeted list of sites to process.';
   $items['msync-sql']['options']['exclude-sites'] = 'A comma-separeted list of sites to exclude.';
-  $items['msync-sql']['options']['clean-target'] = 'If the target DB should be emptied first. Defaults to 1=yes.';
+  // Same option name as in site-install.
+  $items['msync-sql']['options']['db-drop-existing-tables'] = 'If the target DB should be emptied first. Defaults to 1=yes.';
 
   $core_commands = core_drush_command();
   $items['msync-files'] = array(
@@ -94,7 +95,7 @@ function _drush_msync_process($drush_command, $source_spec, $destination_spec) {
     ];
     drush_log(dt('Start: @source => @destination', $t_args), 'ok');
 
-    if ($drush_command == 'sql-sync' && drush_get_option('clean-target', TRUE)) {
+    if ($drush_command == 'sql-sync' && drush_get_option('db-drop-existing-tables', TRUE)) {
       drush_invoke_process('@self', 'sql-drop', [], drush_get_context('cli'));
     }
 
