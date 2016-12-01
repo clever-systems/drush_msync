@@ -11,6 +11,7 @@ function drush_msync_drush_command() {
   $items['msync-sql'] = array(
     'description' => "Does sql-sync for all sites of a multisite. The sites are matched according to their last component (separated by '.').",
   ) + $sql_sync_commands['sql-sync'];
+  $items['msync-sql']['options']['only-sites'] = 'A comma-separeted list of sites to process.';
   $items['msync-sql']['options']['exclude-sites'] = 'A comma-separeted list of sites to exclude.';
   $items['msync-sql']['options']['clean-target'] = 'If the target DB should be emptied first. Defaults to 1=yes.';
 
@@ -18,6 +19,7 @@ function drush_msync_drush_command() {
   $items['msync-files'] = array(
     'description' => "Does rsync for all sites of a multisite. The sites are matched according to their last component (separated by '.').",
   ) + $core_commands['core-rsync'];
+  $items['msync-sql']['options']['only-sites'] = 'A comma-separeted list of sites to process.';
   $items['msync-files']['options']['exclude-sites'] = 'A comma-separeted list of sites to exclude.';
 
   return $items;
@@ -88,15 +90,20 @@ function _drush_msync_process($drush_command, $source, $destination) {
   $sources_by_site = _drush_msync_aliases_by_site($source_record['site-list']);
   $destinations_by_site = _drush_msync_aliases_by_site($destination_record['site-list']);
 
-  $common_sources = array_intersect_key($sources_by_site, $destinations_by_site);
+  $sources = array_intersect_key($sources_by_site, $destinations_by_site);
   $common_destinations = array_intersect_key($destinations_by_site, $sources_by_site);
   $excess_sources = array_diff_key($sources_by_site, $destinations_by_site);
   $excess_destinations = array_diff_key($destinations_by_site, $sources_by_site);
 
+  $restrict_sites = drush_get_option_list('only-sites');
+  $restrict_sites_as_keys = array_fill_keys($restrict_sites, 1);
+  $restricted_sites_to_display  = array_keys(array_intersect_key($restrict_sites_as_keys, $sources));
+  $sources = array_intersect_key($sources, $restrict_sites_as_keys);
+
   $excluded_sites = drush_get_option_list('exclude-sites');
   $excluded_sites_as_keys = array_fill_keys($excluded_sites, 1);
-  $sources_excluded = array_keys(array_intersect_key($excluded_sites_as_keys, $common_sources));
-  $sources_todo = array_intersect_key($common_sources, $excluded_sites_as_keys);
+  $excluded_sites_to_display = array_keys(array_intersect_key($excluded_sites_as_keys, $sources));
+  $sources = array_diff_key($sources, $excluded_sites_as_keys);
 
   if ($excess_sources) {
     drush_log(dt('Excess sources found: @excess', ['@excess' => implode(', ', $excess_sources)]), 'warning');
@@ -104,20 +111,23 @@ function _drush_msync_process($drush_command, $source, $destination) {
   if ($excess_destinations) {
     drush_log(dt('Excess destinations found: @excess', ['@excess' => implode(', ', $excess_destinations)]), 'warning');
   }
-  if ($excess_destinations) {
-    drush_log(dt('Excluded sites: @excluded', ['@excluded' => implode(', ', $sources_excluded)]), 'warning');
+  if ($restricted_sites_to_display) {
+    drush_log(dt('Restricted to sites: @restricted', ['@restricted' => implode(', ', $restricted_sites_to_display)]), 'warning');
   }
-  if (!$common_sources) {
+  if ($excluded_sites_to_display) {
+    drush_log(dt('Excluded sites: @excluded', ['@excluded' => implode(', ', $excluded_sites_to_display)]), 'warning');
+  }
+  if (!$sources) {
     drush_log(dt('No sites found to process.'), 'warning');
   }
   else {
-    drush_log(dt('Syncing: @sites', ['@sites' => implode(', ', array_keys($common_sources))]), 'ok');
+    drush_log(dt('Syncing: @sites', ['@sites' => implode(', ', array_keys($sources))]), 'ok');
     if (!drush_confirm('OK?')) {
       return;
     }
   }
 
-  foreach ($sources_todo as $site => $current_source) {
+  foreach ($sources as $site => $current_source) {
     $current_destination = $common_destinations[$site];
     $t_args = [
       '@source' => $current_source,
